@@ -1,0 +1,18 @@
+# Ignore node_modules from both server and client if they exist locally
+server/node_modules
+public/node_modules
+node_modules
+
+# Ignore local logs and temp files
+*.log
+*.tmp
+
+# Ignore editor and OS-generated files
+.DS_Store
+Thumbs.db
+.git
+.gitignore
+
+# Ignore npm debug logs
+npm-debug.log
+yarn-error.log
