@@ -15,6 +15,12 @@ class MyScene extends Phaser.Scene {
   
       this.clientId = null;
   
+      this.cameras.main.setBounds(0, 0, 10000, 10000);
+      this.cameraTarget = this.add.rectangle(0, 0, 10, 10, 0x000000, 0);
+      this.cameras.main.startFollow(this.cameraTarget, true, 0.1, 0.1);
+    }
+  
+    setupSocket(username) {
       this.cursors = this.input.keyboard.createCursorKeys();
       this.keys = this.input.keyboard.addKeys({ 
         w: Phaser.Input.Keyboard.KeyCodes.W,
@@ -22,13 +28,7 @@ class MyScene extends Phaser.Scene {
         s: Phaser.Input.Keyboard.KeyCodes.S,
         d: Phaser.Input.Keyboard.KeyCodes.D
       });
-  
-      this.cameras.main.setBounds(0, 0, 10000, 10000);
-      this.cameraTarget = this.add.rectangle(0, 0, 10, 10, 0x000000, 0);
-      this.cameras.main.startFollow(this.cameraTarget, true, 0.1, 0.1);
-    }
-  
-    setupSocket(username) {
+
       this.socket = io();
       this.socket.emit('join', username);
   
