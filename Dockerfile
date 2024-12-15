@@ -31,4 +31,4 @@ HEALTHCHECK --interval=30s --timeout=3s \
 EXPOSE 3001
 
 # Start the server
-CMD ["node", "index.js"]
+CMD ["node", "src/index.js"]
