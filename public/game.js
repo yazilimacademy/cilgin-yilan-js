@@ -5,7 +5,7 @@ class MyScene extends Phaser.Scene {
   constructor() {
     super('MyScene');
     this.segmentPool = [];
-    this.maxPoolSize = 1000;
+    this.maxPoolSize = config.MAX_POOL_SIZE;
   }
 
   create() {
