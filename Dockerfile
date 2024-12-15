@@ -5,13 +5,13 @@ FROM node:20-alpine AS client-builder
 WORKDIR /usr/src/client
 
 # Copy client package files
-COPY client-ts/package*.json ./
+COPY client/package*.json ./
 
 # Install client dependencies
 RUN npm install
 
 # Copy client source files
-COPY client-ts/ ./
+COPY client/ ./
 
 # Build client
 RUN npm run build
