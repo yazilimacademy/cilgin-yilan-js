@@ -4,6 +4,8 @@ import { UI } from './ui.js';
 class MyScene extends Phaser.Scene {
   constructor() {
     super('MyScene');
+    this.segmentPool = [];
+    this.maxPoolSize = 1000;
   }
 
   create() {
@@ -14,18 +16,44 @@ class MyScene extends Phaser.Scene {
     
     this.ui = new UI(this);
     this.players = {};
+    this.allPlayers = {};
     this.food = [];
     this.snakeGraphics = this.add.graphics().setDepth(1);
     this.foodGraphics = this.add.graphics().setDepth(1);
     this.clientId = null;
     this.lastRenderTime = 0;
     this.setupCamera();
+    this.initializeSegmentPool();
   }
 
   setupCamera() {
     this.cameras.main.setBounds(0, 0, 10000, 10000);
     this.cameraTarget = this.add.rectangle(0, 0, 10, 10, 0x000000, 0);
     this.cameras.main.startFollow(this.cameraTarget, true, 0.1, 0.1);
+  }
+
+  initializeSegmentPool() {
+    for (let i = 0; i < this.maxPoolSize; i++) {
+      this.segmentPool.push({
+        x: 0,
+        y: 0,
+        active: false
+      });
+    }
+  }
+
+  getSegmentFromPool() {
+    let segment = this.segmentPool.find(s => !s.active);
+    if (!segment) {
+      segment = { x: 0, y: 0, active: false };
+      this.segmentPool.push(segment);
+    }
+    segment.active = true;
+    return segment;
+  }
+
+  returnSegmentToPool(segment) {
+    segment.active = false;
   }
 
   setupSocket(username) {
@@ -85,8 +113,28 @@ class MyScene extends Phaser.Scene {
     this.socket.on('stateUpdate', data => {
       if (!this.clientId) return;
       
-      console.log('State update received');
+      Object.values(this.players).forEach(player => {
+        if (player.segments) {
+          player.segments.forEach(segment => {
+            this.returnSegmentToPool(segment);
+          });
+        }
+      });
+
       this.players = data.players || {};
+      this.allPlayers = data.allPlayers || {};
+      
+      Object.values(this.players).forEach(player => {
+        if (player.segments) {
+          player.segments = player.segments.map(segmentData => {
+            const segment = this.getSegmentFromPool();
+            segment.x = segmentData.x;
+            segment.y = segmentData.y;
+            return segment;
+          });
+        }
+      });
+
       this.food = data.food || [];
       
       if (this.players[this.clientId]) {
@@ -112,11 +160,80 @@ class MyScene extends Phaser.Scene {
     const camH = this.game.scale.height;
 
     this.drawFood(camX, camY, camW, camH);
-    this.drawPlayers(camX, camY, camW, camH);
+    this.batchRenderSnakes();
     this.updateCameraTarget();
-    this.ui.updateScoreboard(this.players, this.clientId);
+    this.ui.updateScoreboard(this.allPlayers, this.clientId);
     this.ui.updateMinimap(this.players, this.clientId, this.ARENA_WIDTH, this.ARENA_HEIGHT, this.VISIBLE_RADIUS);
     this.ui.updateStatusTexts(this.players[this.clientId]);
+  }
+
+  batchRenderSnakes() {
+    this.snakeGraphics.clear();
+
+    if (this.playerNameTexts) {
+      Object.keys(this.playerNameTexts).forEach(playerId => {
+        if (!this.players[playerId] || !this.players[playerId].alive) {
+          this.playerNameTexts[playerId].destroy();
+          delete this.playerNameTexts[playerId];
+        }
+      });
+    }
+
+    Object.values(this.players).forEach(player => {
+      if (!player.segments || !player.alive) return;
+
+      const baseColor = Phaser.Display.Color.HexStringToColor(player.color);
+      const darkerColor = Phaser.Display.Color.ValueToColor(baseColor.color).darken(30);
+
+      player.segments.forEach((segment, index) => {
+        if (index === 0) {
+          this.snakeGraphics.fillStyle(baseColor.color, 1);
+          this.snakeGraphics.fillRoundedRect(segment.x, segment.y, 20, 20, 8);
+          
+          this.snakeGraphics.fillStyle(0xFFFFFF, 1);
+          const eyeSize = 4;
+          this.snakeGraphics.fillCircle(segment.x + 6, segment.y + 6, eyeSize);
+          this.snakeGraphics.fillCircle(segment.x + 14, segment.y + 6, eyeSize);
+          
+          this.snakeGraphics.fillStyle(0x000000, 1);
+          this.snakeGraphics.fillCircle(segment.x + 6, segment.y + 6, eyeSize/2);
+          this.snakeGraphics.fillCircle(segment.x + 14, segment.y + 6, eyeSize/2);
+
+          this.snakeGraphics.lineStyle(6, baseColor.color, 0.3);
+          this.snakeGraphics.strokeRoundedRect(segment.x - 3, segment.y - 3, 26, 26, 8);
+        } else {
+          this.snakeGraphics.fillStyle(baseColor.color, 1);
+          this.snakeGraphics.fillRoundedRect(segment.x, segment.y, 20, 20, 6);
+          
+          this.snakeGraphics.fillStyle(darkerColor.color, 0.5);
+          this.snakeGraphics.fillRoundedRect(segment.x + 4, segment.y + 4, 12, 12, 4);
+        }
+      });
+
+      if (player.username) {
+        const head = player.segments[0];
+        const style = {
+          fontSize: '16px',
+          color: '#ffffff',
+          fontStyle: 'bold',
+          backgroundColor: 'rgba(0,0,0,0.7)',
+          padding: { x: 6, y: 3 },
+          shadow: { blur: 2, color: 'rgba(0,0,0,0.5)', fill: true }
+        };
+        
+        if (!this.playerNameTexts) this.playerNameTexts = {};
+        
+        if (!this.playerNameTexts[player.id]) {
+          this.playerNameTexts[player.id] = this.add.text(head.x + 10, head.y - 30, player.username, style).setOrigin(0.5);
+        }
+        
+        const nameText = this.playerNameTexts[player.id];
+        nameText.setPosition(head.x + 10, head.y - 30);
+        nameText.setText(player.username);
+        nameText.setDepth(10);
+        nameText.setVisible(true);
+      }
+    });
   }
 
   drawFood(camX, camY, camW, camH) {
@@ -137,70 +254,6 @@ class MyScene extends Phaser.Scene {
         
         this.foodGraphics.fillStyle(0xffffff, 0.5);
         this.foodGraphics.fillCircle(f.x - size/3, f.y - size/3, size/3);
-      }
-    });
-  }
-
-  drawPlayers(camX, camY, camW, camH) {
-    this.snakeGraphics.clear();
-    if (!this.playerNameTexts) this.playerNameTexts = {};
-    
-    Object.keys(this.playerNameTexts).forEach(id => {
-      this.playerNameTexts[id].setVisible(false);
-    });
-
-    const padding = 100;
-    Object.entries(this.players).forEach(([id, p]) => {
-      if (!p.alive || p.segments.length === 0) return;
-
-      const head = p.segments[0];
-
-      if (head.x < camX - padding || head.x > camX + camW + padding || 
-          head.y < camY - padding || head.y > camY + camH + padding) {
-        return;
-      }
-
-      const baseColor = Phaser.Display.Color.HexStringToColor(p.color);
-      const darkerColor = Phaser.Display.Color.ValueToColor(baseColor.color).darken(30);
-      
-      this.snakeGraphics.lineStyle(6, baseColor.color, 0.3);
-      this.snakeGraphics.strokeRoundedRect(head.x - 3, head.y - 3, 26, 26, 8);
-
-      p.segments.forEach((seg, index) => {
-        this.snakeGraphics.fillStyle(baseColor.color, 1);
-        if (index === 0) {
-          this.snakeGraphics.fillRoundedRect(seg.x, seg.y, 20, 20, 8);
-          this.snakeGraphics.fillStyle(0xFFFFFF, 1);
-          const eyeSize = 4;
-          this.snakeGraphics.fillCircle(seg.x + 6, seg.y + 6, eyeSize);
-          this.snakeGraphics.fillCircle(seg.x + 14, seg.y + 6, eyeSize);
-          this.snakeGraphics.fillStyle(0x000000, 1);
-          this.snakeGraphics.fillCircle(seg.x + 6, seg.y + 6, eyeSize/2);
-          this.snakeGraphics.fillCircle(seg.x + 14, seg.y + 6, eyeSize/2);
-        } else {
-          this.snakeGraphics.fillRoundedRect(seg.x, seg.y, 20, 20, 6);
-          this.snakeGraphics.fillStyle(darkerColor.color, 0.5);
-          this.snakeGraphics.fillRoundedRect(seg.x + 4, seg.y + 4, 12, 12, 4);
-        }
-      });
-
-      if (p.username) {
-        if (!this.playerNameTexts[id]) {
-          this.playerNameTexts[id] = this.add.text(p.segments[0].x + 10, p.segments[0].y - 30, p.username, {
-            fontSize: '16px',
-            color: config.COLORS.TEXT,
-            fontStyle: 'bold',
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            padding: { x: 6, y: 3 },
-            shadow: { blur: 2, color: 'rgba(0,0,0,0.5)', fill: true }
-          }).setOrigin(0.5);
-        }
-
-        const nameText = this.playerNameTexts[id];
-        nameText.setPosition(p.segments[0].x + 10, p.segments[0].y - 30);
-        nameText.setText(p.username);
-        nameText.setDepth(10);
-        nameText.setVisible(true);
       }
     });
   }

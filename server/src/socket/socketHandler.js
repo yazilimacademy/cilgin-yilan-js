@@ -69,6 +69,17 @@ class SocketHandler {
                         alive: player.alive
                     }
                 },
+                allPlayers: Object.fromEntries(
+                    Object.entries(this.game.players)
+                        .filter(([_, p]) => p?.alive)
+                        .map(([id, p]) => [id, {
+                            id: p.id,
+                            username: p.username,
+                            score: p.score,
+                            highScore: p.highScore,
+                            alive: p.alive
+                        }])
+                ),
                 food: visibleFood
             });
         } else {
@@ -143,6 +154,17 @@ class SocketHandler {
 
             socket.emit('stateUpdate', {
                 players: visiblePlayers,
+                allPlayers: Object.fromEntries(
+                    Object.entries(this.game.players)
+                        .filter(([_, p]) => p?.alive)
+                        .map(([id, p]) => [id, {
+                            id: p.id,
+                            username: p.username,
+                            score: p.score,
+                            highScore: p.highScore,
+                            alive: p.alive
+                        }])
+                ),
                 food: visibleFood.map(f => ({
                     x: Math.round(f.x),
                     y: Math.round(f.y),

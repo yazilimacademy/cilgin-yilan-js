@@ -177,7 +177,6 @@ class Game {
             });
         });
 
-        // Yılanı sıfırla
         player.segments = [];
         player.score = 0;
         player.powerups = {
