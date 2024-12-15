@@ -20,10 +20,13 @@ A modern multiplayer snake game built with Node.js and Phaser 3, featuring real-
 
 ### Prerequisites
 
-- Node.js (v12 or higher)
+- Node.js (v20 or higher)
 - npm (comes with Node.js)
+- Docker (optional, for containerized deployment)
 
 ### Installation
+
+#### Local Development
 
 1. Clone the repository:
 ```bash
@@ -31,19 +34,46 @@ git clone https://github.com/yazilimacademy/cilgin-yilan-js
 cd cilgin-yilan-js
 ```
 
-2. Install dependencies:
+2. Install and build server:
 ```bash
+cd server
 npm install
+npm run build
 ```
 
-3. Start the server:
+3. Install and build client:
 ```bash
+cd ../client
+npm install
+npm run build
+```
+
+4. Start the server:
+```bash
+cd ../server
 npm start
 ```
 
-4. Open your browser and navigate to:
+5. Open your browser and navigate to:
 ```
-http://localhost:30001
+http://localhost:3001
+```
+
+#### Docker Deployment
+
+1. Build the Docker image:
+```bash
+docker build -t yilan -f Dockerfile .
+```
+
+2. Run the container:
+```bash
+docker run -p 3001:3001 yilan
+```
+
+3. Access the game at:
+```
+http://localhost:3001
 ```
 
 ## How to Play 🎯
@@ -72,15 +102,21 @@ http://localhost:30001
 ## Technical Details 🔧
 
 - **Frontend**: 
+  - TypeScript for type safety
   - Phaser 3 for game rendering
-  - Socket.io for real-time communication
+  - Socket.io-client for real-time communication
+  - Vite for fast development and optimized builds
 - **Backend**:
-  - Node.js server
+  - Node.js with TypeScript
+  - Express.js for serving static files
   - Socket.io for multiplayer support
 - **Game Logic**:
   - Collision detection
   - Food spawning system
   - Player state management
+- **Deployment**:
+  - Docker support for easy deployment
+  - Multi-stage builds for optimized container size
 
 ## Contributing 🤝
 
