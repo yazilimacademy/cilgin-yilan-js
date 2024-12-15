@@ -1,34 +1,31 @@
-# Use an official Node.js runtime as a parent image
+# Use Node.js LTS version
 FROM node:20-alpine
 
-# Install curl for healthcheck
-RUN apk --no-cache add curl
+# Create app directory
+WORKDIR /usr/src/app
 
-# Set the working directory inside the container
-WORKDIR /app
-
-# Copy package files first for better caching
-COPY server/package*.json server/
-COPY server/yarn.lock server/
+# Copy package files
+COPY server/package*.json ./
 
 # Install dependencies
-WORKDIR /app/server
-RUN yarn install --production
+RUN npm install
 
-# Copy the rest of the application
-WORKDIR /app
-COPY server server/
-COPY public public/
+# Copy server source files first
+COPY server/ ./
 
-# Set the working directory back to server
-WORKDIR /app/server
+# Create public directory and copy public files
+RUN mkdir -p /usr/src/app/public
+COPY public/* /usr/src/app/public/
 
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD curl -f http://localhost:3001/ || exit 1
+# Build TypeScript code
+RUN npm run build
 
 # Expose the port the app runs on
 EXPOSE 3001
 
-# Start the server
-CMD ["node", "src/index.js"]
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/ || exit 1
+
+# Start the application
+CMD ["npm", "start"]
