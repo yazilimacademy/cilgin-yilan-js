@@ -167,7 +167,11 @@ export class UI {
     
     if (player.powerups?.speed_boost?.active) {
       const timeLeft = Math.max(0, Math.ceil((player.powerups.speed_boost.endTime - Date.now()) / 1000));
-      this.powerupText.setText(`Speed Boost: ${timeLeft}s`).setVisible(true);
+      if (timeLeft <= config.POWERUP_DURATION) {  
+        this.powerupText.setText(`Speed Boost: ${timeLeft}s`).setVisible(true);
+      } else {
+        this.powerupText.setVisible(false);
+      }
     } else {
       this.powerupText.setVisible(false);
     }

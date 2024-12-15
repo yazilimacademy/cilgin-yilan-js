@@ -16,7 +16,8 @@ const config = {
     MINIMAP_BG: '#1B1B1B',
     POWERUP: '#00ff00'
   },
-  MAX_POOL_SIZE: 1000
+  MAX_POOL_SIZE: 1000,
+  POWERUP_DURATION: 3
 };
 
 export default config;
