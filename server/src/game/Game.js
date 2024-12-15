@@ -54,7 +54,12 @@ class Game {
             score: 0,
             highScore: 0,
             powerups: {
-                speed_boost: { active: false, endTime: 0 }
+                speed_boost: {
+                    active: false,
+                    endTime: 0,
+                    duration: gameConfig.POWERUP_DURATION,
+                    multiplier: 1.5
+                }
             }
         };
     }
@@ -105,8 +110,8 @@ class Game {
 
                 if (f.type === 'SPEED') {
                     player.powerups.speed_boost.active = true;
-                    player.powerups.speed_boost.endTime = now + gameConfig.POWERUP_DURATION;
-                    player.speed = gameConfig.BASE_SPEED * 1.5;
+                    player.powerups.speed_boost.endTime = now + player.powerups.speed_boost.duration;
+                    player.speed = gameConfig.BASE_SPEED * player.powerups.speed_boost.multiplier;
                 }
 
                 this.food[i] = this.createFood();
@@ -168,7 +173,12 @@ class Game {
                     player.score = 0;
                     player.pendingGrowth = 0;
                     player.speed = gameConfig.BASE_SPEED;
-                    player.powerups.speed_boost = { active: false, endTime: 0 };
+                    player.powerups.speed_boost = {
+                        active: false,
+                        endTime: 0,
+                        duration: gameConfig.POWERUP_DURATION,
+                        multiplier: 1.5
+                    };
                 }
                 continue;
             }
@@ -176,7 +186,7 @@ class Game {
             if (player.segments.length === 0) continue;
 
             player.speed = player.powerups.speed_boost.active ? 
-                gameConfig.BASE_SPEED * 1.5 : 
+                gameConfig.BASE_SPEED * player.powerups.speed_boost.multiplier : 
                 this.calculateSpeed(player.segments.length);
 
             this.moveSnake(player);

@@ -4,13 +4,14 @@ import { UI } from './ui.js';
 class MyScene extends Phaser.Scene {
   constructor() {
     super('MyScene');
-    this.ARENA_WIDTH = 5000;
-    this.ARENA_HEIGHT = 5000;
-    this.VISIBLE_RADIUS = 2000;
   }
 
   create() {
-    this.infoText = this.add.text(100, 100, 'Waiting to join...', { color: config.COLORS.POWERUP, fontSize: '32px' });
+    this.infoText = this.add.text(this.game.scale.width / 2, this.game.scale.height / 2, 'Waiting to join...', { 
+        color: config.COLORS.POWERUP, 
+        fontSize: '32px' 
+    }).setOrigin(0.5);
+    
     this.ui = new UI(this);
     this.players = {};
     this.food = [];
@@ -30,7 +31,17 @@ class MyScene extends Phaser.Scene {
   setupSocket(username) {
     this.setupControls();
     this.socket = io();
-    this.handleJoin(username);
+    
+    this.socket.on('connect_error', (error) => {
+      console.error('Connection Error:', error);
+      this.infoText.setText('Connection Error! Please refresh the page.');
+    });
+
+    this.socket.on('connect', () => {
+      console.log('Connected to server');
+      this.handleJoin(username);
+    });
+
     this.setupSocketListeners();
   }
 
@@ -54,22 +65,33 @@ class MyScene extends Phaser.Scene {
 
   setupSocketListeners() {
     this.socket.on('welcome', msg => {
+      console.log('Welcome message:', msg);
       this.infoText.setText(msg);
     });
 
     this.socket.on('yourId', id => {
+      console.log('Received ID:', id);
       this.clientId = id;
     });
 
     this.socket.on('gameConfig', config => {
+      console.log('Received game config:', config);
       this.ARENA_WIDTH = config.arenaWidth;
       this.ARENA_HEIGHT = config.arenaHeight;
       this.VISIBLE_RADIUS = config.visibleRadius;
+      this.cameras.main.setBounds(0, 0, this.ARENA_WIDTH, this.ARENA_HEIGHT);
     });
 
     this.socket.on('stateUpdate', data => {
-      this.players = data.players;
-      this.food = data.food;
+      if (!this.clientId) return;
+      
+      console.log('State update received');
+      this.players = data.players || {};
+      this.food = data.food || [];
+      
+      if (this.players[this.clientId]) {
+        this.infoText.setVisible(false);
+      }
     });
   }
 
@@ -207,6 +229,9 @@ class MyScene extends Phaser.Scene {
   }
 
   handleResize() {
+    if (this.infoText) {
+      this.infoText.setPosition(this.game.scale.width / 2, this.game.scale.height / 2);
+    }
     this.ui.handleResize();
   }
 }

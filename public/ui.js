@@ -106,16 +106,18 @@ export class UI {
   }
 
   updateScoreboard(players, clientId) {
+    if (!players || !clientId) return;
+
     const sortedPlayers = Object.values(players)
-      .filter(player => player.alive && player.username)
-      .sort((a, b) => b.score - a.score)
+      .filter(player => player?.alive && player?.username)
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
       .slice(0, config.SCOREBOARD.TOP_PLAYERS);
 
     sortedPlayers.forEach((player, index) => {
       const isCurrentPlayer = player.id === clientId;
       const color = isCurrentPlayer ? config.COLORS.CURRENT_PLAYER : config.COLORS.TEXT;
       const text = `${index + 1}. ${player.username}`;
-      const score = `${player.score}`;
+      const score = `${player.score || 0}`;
       const dots = '.'.repeat(Math.max(0, 20 - text.length - score.length));
       this.scoreboardTexts[index].setText(`${text}${dots}${score}`);
       this.scoreboardTexts[index].setColor(color);
@@ -153,12 +155,17 @@ export class UI {
   }
 
   updateStatusTexts(player) {
-    if (!player) return;
+    if (!player) {
+      this.scoreText.setText('Score: 0');
+      this.highScoreText.setText('High Score: 0');
+      this.powerupText.setVisible(false);
+      return;
+    }
     
-    this.scoreText.setText(`Score: ${player.score}`);
-    this.highScoreText.setText(`High Score: ${player.highScore}`);
+    this.scoreText.setText(`Score: ${player.score || 0}`);
+    this.highScoreText.setText(`High Score: ${player.highScore || 0}`);
     
-    if (player.powerups.speed_boost.active) {
+    if (player.powerups?.speed_boost?.active) {
       const timeLeft = Math.max(0, Math.ceil((player.powerups.speed_boost.endTime - Date.now()) / 1000));
       this.powerupText.setText(`Speed Boost: ${timeLeft}s`).setVisible(true);
     } else {
