@@ -1,34 +1,64 @@
-# Use an official Node.js runtime as a parent image
+# Build stage for client
+FROM node:20-alpine AS client-builder
+
+# Set working directory for client
+WORKDIR /usr/src/client
+
+# Copy client package files
+COPY client/package*.json ./
+
+# Install client dependencies
+RUN npm install
+
+# Copy client source files
+COPY client/ ./
+
+# Build client
+RUN npm run build
+
+# Build stage for server
+FROM node:20-alpine AS server-builder
+
+# Set working directory for server
+WORKDIR /usr/src/server
+
+# Copy server package files
+COPY server/package*.json ./
+
+# Install server dependencies
+RUN npm install
+
+# Copy server source files
+COPY server/ ./
+
+# Build server TypeScript code
+RUN npm run build
+
+# Final stage
 FROM node:20-alpine
 
-# Install curl for healthcheck
-RUN apk --no-cache add curl
+# Create app directory
+WORKDIR /usr/src/app
 
-# Set the working directory inside the container
-WORKDIR /app
+# Copy server package files
+COPY server/package*.json ./
 
-# Copy package files first for better caching
-COPY server/package*.json server/
-COPY server/yarn.lock server/
+# Install production dependencies only
+RUN npm install --omit=dev
 
-# Install dependencies
-WORKDIR /app/server
-RUN yarn install --production
+# Copy built server files
+COPY --from=server-builder /usr/src/server/dist ./dist
 
-# Copy the rest of the application
-WORKDIR /app
-COPY server server/
-COPY public public/
-
-# Set the working directory back to server
-WORKDIR /app/server
-
-# Add healthcheck
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD curl -f http://localhost:3001/ || exit 1
+# Create public directory and copy built client files
+RUN mkdir -p /usr/src/app/public
+COPY --from=client-builder /usr/src/client/dist /usr/src/app/public
 
 # Expose the port the app runs on
 EXPOSE 3001
 
-# Start the server
-CMD ["node", "src/index.js"]
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=3s \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/ || exit 1
+
+# Start the application
+CMD ["npm", "start"]

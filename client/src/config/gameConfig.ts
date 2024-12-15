@@ -1,4 +1,4 @@
-const config = {
+export const config = {
   SCOREBOARD: {
     WIDTH: 200,
     PADDING: 20,
@@ -15,7 +15,7 @@ const config = {
     MINIMAP_BORDER: '#333333',
     MINIMAP_BG: '#1B1B1B',
     POWERUP: '#00ff00'
-  }
-};
-
-export default config;
+  },
+  MAX_POOL_SIZE: 1000,
+  POWERUP_DURATION: 3
+} as const;
