@@ -159,6 +159,32 @@ class Game {
         });
     }
 
+    handlePlayerDeath(player) {
+        if (!player?.alive) return;
+        
+        player.alive = false;
+        if (player.score > player.highScore) {
+            player.highScore = player.score;
+        }
+
+        player.segments.forEach(segment => {
+            const foodType = Math.random() < 0.1 ? 'SUPER' : 'NORMAL';
+            this.food.push({
+                x: segment.x + Math.random() * 20 - 10,
+                y: segment.y + Math.random() * 20 - 10,
+                color: player.color,
+                type: foodType
+            });
+        });
+
+        // Yılanı sıfırla
+        player.segments = [];
+        player.score = 0;
+        player.powerups = {
+            speed_boost: { active: false, endTime: 0 }
+        };
+    }
+
     update() {
         for (const playerId in this.players) {
             const player = this.players[playerId];
@@ -193,8 +219,7 @@ class Game {
             this.checkFoodCollision(player);
 
             if (this.checkCollisions(player)) {
-                this.dropSnakeSegmentsAsFood(player);
-                player.alive = false;
+                this.handlePlayerDeath(player);
                 player.respawnTime = Date.now() + gameConfig.RESPAWN_DELAY;
             }
         }
