@@ -14,9 +14,10 @@ class MyScene extends Phaser.Scene {
     this.ui = new UI(this);
     this.players = {};
     this.food = [];
-    this.snakeGraphics = this.add.graphics();
-    this.foodGraphics = this.add.graphics().setDepth(1);  
+    this.snakeGraphics = this.add.graphics().setDepth(1);
+    this.foodGraphics = this.add.graphics().setDepth(1);
     this.clientId = null;
+    this.lastRenderTime = 0;
     this.setupCamera();
   }
 
@@ -29,7 +30,7 @@ class MyScene extends Phaser.Scene {
   setupSocket(username) {
     this.setupControls();
     this.socket = io();
-    this.socket.emit('join', username);
+    this.handleJoin(username);
     this.setupSocketListeners();
   }
 
@@ -41,6 +42,14 @@ class MyScene extends Phaser.Scene {
       s: Phaser.Input.Keyboard.KeyCodes.S,
       d: Phaser.Input.Keyboard.KeyCodes.D
     });
+  }
+
+  handleJoin(username) {
+    if (!username) return;
+    if (username.length > gameConfig.MAX_USERNAME_LENGTH) {
+      username = username.substring(0, gameConfig.MAX_USERNAME_LENGTH);
+    }
+    this.socket.emit('join', username);
   }
 
   setupSocketListeners() {
@@ -67,24 +76,34 @@ class MyScene extends Phaser.Scene {
   update() {
     if (!this.clientId) return;
 
+    const now = performance.now();
+    const elapsed = now - this.lastRenderTime;
+    
+    if (elapsed < 16.67) return;
+    
+    this.lastRenderTime = now;
     this.handleInput();
-    this.drawFood();
-    this.drawPlayers();
+
+    const camX = this.cameras.main.scrollX;
+    const camY = this.cameras.main.scrollY;
+    const camW = this.game.scale.width;
+    const camH = this.game.scale.height;
+
+    this.drawFood(camX, camY, camW, camH);
+    this.drawPlayers(camX, camY, camW, camH);
     this.updateCameraTarget();
     this.ui.updateScoreboard(this.players, this.clientId);
     this.ui.updateMinimap(this.players, this.clientId, this.ARENA_WIDTH, this.ARENA_HEIGHT, this.VISIBLE_RADIUS);
     this.ui.updateStatusTexts(this.players[this.clientId]);
   }
 
-  drawFood() {
+  drawFood(camX, camY, camW, camH) {
     this.foodGraphics.clear();
-    const camX = this.cameras.main.scrollX;
-    const camY = this.cameras.main.scrollY;
-    const camW = this.game.scale.width;
-    const camH = this.game.scale.height;
 
+    const padding = 100;
     this.food.forEach(f => {
-      if (f.x > camX && f.x < camX + camW && f.y > camY && f.y < camY + camH) {
+      if (f.x > camX - padding && f.x < camX + camW + padding && 
+          f.y > camY - padding && f.y < camY + camH + padding) {
         const color = Phaser.Display.Color.HexStringToColor(f.color);
         const size = f.type === 'SUPER' ? 12 : 8;
         
@@ -100,20 +119,28 @@ class MyScene extends Phaser.Scene {
     });
   }
 
-  drawPlayers() {
+  drawPlayers(camX, camY, camW, camH) {
     this.snakeGraphics.clear();
     if (!this.playerNameTexts) this.playerNameTexts = {};
+    
     Object.keys(this.playerNameTexts).forEach(id => {
       this.playerNameTexts[id].setVisible(false);
     });
 
+    const padding = 100;
     Object.entries(this.players).forEach(([id, p]) => {
       if (!p.alive || p.segments.length === 0) return;
+
+      const head = p.segments[0];
+
+      if (head.x < camX - padding || head.x > camX + camW + padding || 
+          head.y < camY - padding || head.y > camY + camH + padding) {
+        return;
+      }
 
       const baseColor = Phaser.Display.Color.HexStringToColor(p.color);
       const darkerColor = Phaser.Display.Color.ValueToColor(baseColor.color).darken(30);
       
-      const head = p.segments[0];
       this.snakeGraphics.lineStyle(6, baseColor.color, 0.3);
       this.snakeGraphics.strokeRoundedRect(head.x - 3, head.y - 3, 26, 26, 8);
 
@@ -136,9 +163,8 @@ class MyScene extends Phaser.Scene {
       });
 
       if (p.username) {
-        const head = p.segments[0];
         if (!this.playerNameTexts[id]) {
-          this.playerNameTexts[id] = this.add.text(head.x + 10, head.y - 30, p.username, {
+          this.playerNameTexts[id] = this.add.text(p.segments[0].x + 10, p.segments[0].y - 30, p.username, {
             fontSize: '16px',
             color: config.COLORS.TEXT,
             fontStyle: 'bold',
@@ -149,7 +175,7 @@ class MyScene extends Phaser.Scene {
         }
 
         const nameText = this.playerNameTexts[id];
-        nameText.setPosition(head.x + 10, head.y - 30);
+        nameText.setPosition(p.segments[0].x + 10, p.segments[0].y - 30);
         nameText.setText(p.username);
         nameText.setDepth(10);
         nameText.setVisible(true);
@@ -191,7 +217,8 @@ const gameConfig = {
   width: window.innerWidth,
   height: window.innerHeight,
   backgroundColor: config.COLORS.BACKGROUND,
-  scene: [MyScene]
+  scene: [MyScene],
+  MAX_USERNAME_LENGTH: 11
 };
 
 const game = new Phaser.Game(gameConfig);

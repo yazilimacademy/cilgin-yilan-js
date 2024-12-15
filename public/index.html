@@ -32,8 +32,10 @@
   </head>
   <body>
     <div id="overlay">
-      <input type="text" id="usernameInput" placeholder="Enter your username">
-      <button id="joinBtn">Join</button>
+      <div id="username-form">
+        <input type="text" id="usernameInput" placeholder="Enter your username" maxlength="11">
+        <button id="joinBtn">Join</button>
+      </div>
     </div>
     <div id="gameContainer"></div>
     <script src="/socket.io/socket.io.js"></script>

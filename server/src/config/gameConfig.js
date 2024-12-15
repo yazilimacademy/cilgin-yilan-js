@@ -1,20 +1,21 @@
 const gameConfig = {
     ARENA_WIDTH: 5000,
     ARENA_HEIGHT: 5000,
-    FOOD_COUNT: 1000,
-    MAX_FOOD_COUNT: 1500,
-    BASE_SPEED: 3,
-    MIN_SPEED: 1,
+    FOOD_COUNT: 500,
+    MAX_FOOD_COUNT: 1000,
+    BASE_SPEED: 4,
+    MIN_SPEED: 2,
     RESPAWN_DELAY: 3000,
-    UPDATE_RATE: 60,
-    BROADCAST_RATE: 40,
-    VISIBLE_RADIUS: 2000,
+    UPDATE_RATE: 45,
+    BROADCAST_RATE: 50,
+    VISIBLE_RADIUS: 1500,
     POWERUP_DURATION: 3000,
+    MAX_USERNAME_LENGTH: 11,
 
     FOOD_TYPES: {
-        NORMAL: { points: 10, growth: 1, color: '#ff0000', chance: 0.7 },
-        SUPER: { points: 25, growth: 2, color: '#ffff00', chance: 0.2 },
-        SPEED: { points: 15, growth: 1, color: '#00ff00', chance: 0.1, effect: 'speed_boost' }
+        NORMAL: { points: 10, growth: 1, color: '#ff0000', chance: 0.8 },
+        SUPER: { points: 25, growth: 2, color: '#ffff00', chance: 0.15 },
+        SPEED: { points: 15, growth: 1, color: '#00ff00', chance: 0.05, effect: 'speed_boost' }
     },
 
     PLAYER_COLORS: [
