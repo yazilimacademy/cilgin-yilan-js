@@ -9,9 +9,11 @@ class MyScene extends Phaser.Scene {
   }
 
   create() {
-    this.infoText = this.add.text(this.game.scale.width / 2, this.game.scale.height / 2, 'Waiting to join...', { 
-        color: config.COLORS.POWERUP, 
-        fontSize: '32px' 
+    this.infoText = this.add.text(this.game.scale.width / 2, (this.game.scale.height / 2) + 150, 'Waiting to join...', { 
+        color: config.COLORS.INFO,
+        fontSize: '24px',
+        fontFamily: 'Courier New',
+        fontStyle: 'bold'
     }).setOrigin(0.5);
     
     this.ui = new UI(this);
@@ -139,6 +141,7 @@ class MyScene extends Phaser.Scene {
       
       if (this.players[this.clientId]) {
         this.infoText.setVisible(false);
+        this.ui.showGameElements();
       }
     });
   }
@@ -283,7 +286,7 @@ class MyScene extends Phaser.Scene {
 
   handleResize() {
     if (this.infoText) {
-      this.infoText.setPosition(this.game.scale.width / 2, this.game.scale.height / 2);
+      this.infoText.setPosition(this.game.scale.width / 2, (this.game.scale.height / 2) + 150);
     }
     this.ui.handleResize();
   }

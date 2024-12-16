@@ -6,6 +6,7 @@ export class UI {
     this.setupScoreboard();
     this.setupMinimap();
     this.setupStatusTexts();
+    this.hideGameElements();
   }
 
   setupScoreboard() {
@@ -150,6 +151,24 @@ export class UI {
     
     this.scoreText.setText(`Score: ${player.score || 0}`);
     this.highScoreText.setText(`High Score: ${player.highScore || 0}`);
+  }
+
+  hideGameElements() {
+    this.scoreText.setVisible(false);
+    this.highScoreText.setVisible(false);
+    this.minimapGraphics.setVisible(false);
+    this.minimapContainer.setVisible(false);
+    this.scoreboardTitle.setVisible(false);
+    this.scoreboardTexts.forEach(text => text.setVisible(false));
+  }
+
+  showGameElements() {
+    this.scoreText.setVisible(true);
+    this.highScoreText.setVisible(true);
+    this.minimapGraphics.setVisible(true);
+    this.minimapContainer.setVisible(true);
+    this.scoreboardTitle.setVisible(true);
+    this.scoreboardTexts.forEach(text => text.setVisible(true));
   }
 
   handleResize() {
