@@ -6,6 +6,7 @@ export class UI {
     this.setupScoreboard();
     this.setupMinimap();
     this.setupStatusTexts();
+    this.hideGameElements();
   }
 
   setupScoreboard() {
@@ -56,19 +57,6 @@ export class UI {
       { 
         fontSize: '24px',
         color: config.COLORS.CURRENT_PLAYER,
-        fontStyle: 'bold',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        padding: { x: 10, y: 5 }
-      }
-    ).setScrollFactor(0);
-
-    this.powerupText = this.scene.add.text(
-      config.SCOREBOARD.PADDING, 
-      config.SCOREBOARD.PADDING + 80, 
-      '', 
-      {
-        fontSize: '24px',
-        color: config.COLORS.POWERUP,
         fontStyle: 'bold',
         backgroundColor: 'rgba(0,0,0,0.5)',
         padding: { x: 10, y: 5 }
@@ -158,19 +146,29 @@ export class UI {
     if (!player) {
       this.scoreText.setText('Score: 0');
       this.highScoreText.setText('High Score: 0');
-      this.powerupText.setVisible(false);
       return;
     }
     
     this.scoreText.setText(`Score: ${player.score || 0}`);
     this.highScoreText.setText(`High Score: ${player.highScore || 0}`);
-    
-    if (player.powerups?.speed_boost?.active) {
-      const timeLeft = Math.max(0, Math.ceil((player.powerups.speed_boost.endTime - Date.now()) / 1000));
-      this.powerupText.setText(`Speed Boost: ${timeLeft}s`).setVisible(true);
-    } else {
-      this.powerupText.setVisible(false);
-    }
+  }
+
+  hideGameElements() {
+    this.scoreText.setVisible(false);
+    this.highScoreText.setVisible(false);
+    this.minimapGraphics.setVisible(false);
+    this.minimapContainer.setVisible(false);
+    this.scoreboardTitle.setVisible(false);
+    this.scoreboardTexts.forEach(text => text.setVisible(false));
+  }
+
+  showGameElements() {
+    this.scoreText.setVisible(true);
+    this.highScoreText.setVisible(true);
+    this.minimapGraphics.setVisible(true);
+    this.minimapContainer.setVisible(true);
+    this.scoreboardTitle.setVisible(true);
+    this.scoreboardTexts.forEach(text => text.setVisible(true));
   }
 
   handleResize() {
